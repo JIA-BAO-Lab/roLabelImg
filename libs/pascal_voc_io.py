@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 import sys
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
@@ -52,7 +52,7 @@ class PascalVocWriter:
         """
             Return a pretty-printed XML string for the Element.
         """
-        rough_string = ElementTree.tostring(elem, 'utf8')
+        rough_string = ElementTree.tostring(elem, 'utf-8')
         root = etree.fromstring(rough_string)
         try:
             return etree.tostring(root, pretty_print=True)
@@ -192,7 +192,7 @@ class PascalVocWriter:
             out_file = codecs.open(targetFile, 'w', encoding='utf-8')
 
         prettifyResult = self.prettify(root)
-        out_file.write(prettifyResult.decode('utf8'))
+        out_file.write(prettifyResult.decode('utf-8'))
         out_file.close()
 
 
