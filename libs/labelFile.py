@@ -48,7 +48,8 @@ class LabelFile(object):
             points = shape['points']
             label = shape['label']
             # Add Chris
-            difficult = int(shape['difficult'])           
+            difficult = int(shape['difficult'])
+            line_feed = int(shape['line_feed'])
             direction = shape['direction']
             isRotated = shape['isRotated']
             # if shape is normal box, save as bounding box 
@@ -56,11 +57,11 @@ class LabelFile(object):
             if not isRotated:
                 bndbox = LabelFile.convertPoints2BndBox(points)
                 writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], 
-                    bndbox[3], label, difficult)
+                    bndbox[3], label, difficult, line_feed)
             else: #if shape is rotated box, save as rotated bounding box
                 robndbox = LabelFile.convertPoints2RotatedBndBox(shape)
-                writer.addRotatedBndBox(robndbox[0],robndbox[1],
-                    robndbox[2],robndbox[3],robndbox[4],label,difficult)
+                writer.addRotatedBndBox(robndbox[0], robndbox[1],
+                    robndbox[2], robndbox[3], robndbox[4], label, difficult, line_feed)
 
         writer.save(targetFile=filename)
         return
@@ -115,5 +116,4 @@ class LabelFile(object):
             (points[2][1]-points[1][1]) ** 2)
 
         angle = direction % math.pi
-
         return (round(cx,4),round(cy,4),round(w,4),round(h,4),round(angle,6))

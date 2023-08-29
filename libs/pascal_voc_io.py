@@ -100,18 +100,20 @@ class PascalVocWriter:
         segmented.text = '0'
         return top
 
-    def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult):
+    def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult, line_feed):
         bndbox = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
         bndbox['name'] = name
         bndbox['difficult'] = difficult
+        bndbox['line_feed'] = line_feed
         self.boxlist.append(bndbox)
 
     # You Hao 2017/06/21
     # add to analysis robndbox
-    def addRotatedBndBox(self, cx, cy, w, h, angle, name, difficult):
+    def addRotatedBndBox(self, cx, cy, w, h, angle, name, difficult, line_feed):
         robndbox = {'cx': cx, 'cy': cy, 'w': w, 'h': h, 'angle': angle}
         robndbox['name'] = name
         robndbox['difficult'] = difficult
+        robndbox['line_feed'] = line_feed
         self.roboxlist.append(robndbox)
 
     def appendObjects(self, top):
@@ -135,7 +137,9 @@ class PascalVocWriter:
             else:
                 truncated.text = "0"
             difficult = SubElement(object_item, 'difficult')
-            difficult.text = str( bool(each_object['difficult']) & 1 )            
+            difficult.text = str( bool(each_object['difficult']) & 1 )
+            line_feed = SubElement(object_item, 'line_feed')
+            line_feed.text = str( bool(each_object['line_feed']) & 1 )
             bndbox = SubElement(object_item, 'bndbox')
             xmin = SubElement(bndbox, 'xmin')
             xmin.text = str(each_object['xmin'])
@@ -168,7 +172,9 @@ class PascalVocWriter:
             # else:
             truncated.text = "0"
             difficult = SubElement(object_item, 'difficult')
-            difficult.text = str( bool(each_object['difficult']) & 1 )
+            difficult.text = str(bool(each_object['difficult']) & 1)
+            line_feed = SubElement(object_item, 'line_feed')
+            line_feed.text = str(bool(each_object['line_feed']) & 1)
             robndbox = SubElement(object_item, 'robndbox')
             cx = SubElement(robndbox, 'cx')
             cx.text = str(each_object['cx'])
@@ -209,17 +215,18 @@ class PascalVocReader:
     def getShapes(self):
         return self.shapes
 
-    def addShape(self, label, bndbox, difficult):
+    def addShape(self, label, bndbox, difficult, line_feed=False):
         xmin = int(bndbox.find('xmin').text)
         ymin = int(bndbox.find('ymin').text)
         xmax = int(bndbox.find('xmax').text)
         ymax = int(bndbox.find('ymax').text)
         points = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)]
-        self.shapes.append((label, points, 0, False, None, None, difficult))
+        print(f"difficult: {difficult}, line_feed: {line_feed}")
+        self.shapes.append((label, points, 0, False, None, None, difficult, line_feed))
 
     # You Hao 2017/06/21
     # add to analysis robndbox load from xml
-    def addRotatedShape(self, label, robndbox, difficult):
+    def addRotatedShape(self, label, robndbox, difficult, line_feed=False):
         cx = float(robndbox.find('cx').text)
         cy = float(robndbox.find('cy').text)
         w = float(robndbox.find('w').text)
@@ -232,11 +239,11 @@ class PascalVocReader:
         p3x,p3y = self.rotatePoint(cx,cy, cx - w/2, cy + h/2, -angle)
 
         points = [(p0x, p0y), (p1x, p1y), (p2x, p2y), (p3x, p3y)]
-        self.shapes.append((label, points, angle, True, None, None, difficult))
+        self.shapes.append((label, points, angle, True, None, None, difficult, line_feed))
 
     def rotatePoint(self, xc,yc, xp,yp, theta):        
-        xoff = xp-xc;
-        yoff = yp-yc;
+        xoff = xp-xc
+        yoff = yp-yc
 
         cosTheta = math.cos(theta)
         sinTheta = math.sin(theta)
@@ -268,7 +275,11 @@ class PascalVocReader:
                 difficult = False
                 if object_iter.find('difficult') is not None:
                     difficult = bool(int(object_iter.find('difficult').text))
-                self.addShape(label, bndbox, difficult)
+
+                line_feed = False
+                if object_iter.find('line_feed') is not None:
+                    line_feed = bool(int(object_iter.find('line_feed').text))
+                self.addShape(label, bndbox, difficult, line_feed)
 
             # You Hao 2017/06/21
             # add to load robndbox
@@ -278,7 +289,11 @@ class PascalVocReader:
                 difficult = False
                 if object_iter.find('difficult') is not None:
                     difficult = bool(int(object_iter.find('difficult').text))
-                self.addRotatedShape(label, robndbox, difficult)
+
+                line_feed = False
+                if object_iter.find('line_feed') is not None:
+                    line_feed = bool(int(object_iter.find('line_feed').text))
+                self.addRotatedShape(label, robndbox, difficult, line_feed)
             
             else: 
                 pass

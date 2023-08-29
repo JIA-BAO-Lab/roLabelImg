@@ -140,9 +140,15 @@ class MainWindow(QMainWindow, WindowMixin):
         self.editButton = QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 
+        # Create a widget for choosing line feed button
+        self.lineFeedButton = QCheckBox(u'line_feed')
+        self.lineFeedButton.setChecked(False)
+        self.lineFeedButton.stateChanged.connect(self.btn_line_feed_status)
+
         # Add some of widgets to listLayout 
         listLayout.addWidget(self.editButton)
         listLayout.addWidget(self.diffcButton)
+        listLayout.addWidget(self.lineFeedButton)
         listLayout.addWidget(useDefautLabelContainer)
 
         # Create and add a widget for showing current label items
@@ -398,6 +404,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.fit_window = False
         # Add Chris
         self.difficult = False
+        self.line_feed = False
 
         # Load predefined classes to the list
         self.loadPredefinedClasses(defaultPrefdefClassFile)
@@ -457,6 +464,7 @@ class MainWindow(QMainWindow, WindowMixin):
         Shape.fill_color = self.fillColor
         # Add chris
         Shape.difficult = self.difficult
+        Shape.line_feed = self.line_feed
 
         def xbool(x):
             if isinstance(x, QVariant):
@@ -689,6 +697,32 @@ class MainWindow(QMainWindow, WindowMixin):
         except:
             pass
 
+    def btn_line_feed_status(self, item= None):
+        """ Function to handle line feed examples
+         date on each object """
+        if not self.canvas.editing():
+            return
+
+        item = self.currentItem()
+        if not item: # If not selected Item, take the first one
+            item = self.labelList.item(self.labelList.count()-1)
+
+        line_feed = self.lineFeedButton.isChecked()
+
+        try:
+            shape = self.itemsToShapes[item]
+        except:
+            pass
+        # Checked and Update
+        try:
+            if line_feed != shape.line_feed:
+                shape.line_feed = line_feed
+                self.setDirty()
+            else:  # User probably changed item visibility
+                self.canvas.setShapeVisible(shape, item.checkState() == Qt.Checked)
+        except:
+            pass
+
     # React to canvas signals.
     def shapeSelectionChanged(self, selected=False):
         if self._noSelectionSlot:
@@ -726,10 +760,16 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, direction, isRotated, line_color, fill_color, difficult in shapes:
+        for shape in shapes:
+            try:
+                label, points, direction, isRotated, line_color, fill_color, difficult, line_feed = shape
+            except ValueError:
+                label, points, direction, isRotated, line_color, fill_color, difficult = shape
+                line_feed = False
             shape = Shape(label=label)
             for x, y in points:
                 shape.addPoint(QPointF(x, y))
+            shape.line_feed = line_feed
             shape.difficult = difficult
             shape.direction = direction
             shape.isRotated = isRotated
@@ -741,7 +781,6 @@ class MainWindow(QMainWindow, WindowMixin):
                 shape.line_color = QColor(*line_color)
             if fill_color:
                 shape.fill_color = QColor(*fill_color)
-
         self.canvas.loadShapes(s)
 
     def saveLabels(self, annotationFilePath):
@@ -759,6 +798,7 @@ class MainWindow(QMainWindow, WindowMixin):
                         points=[(p.x(), p.y()) for p in s.points],
                        # add chris
                         difficult = s.difficult,
+                        line_feed = s.line_feed,
                         # You Hao 2017/06/21
                         # add for rotated bounding box
                         direction = s.direction,
@@ -794,6 +834,7 @@ class MainWindow(QMainWindow, WindowMixin):
             shape = self.itemsToShapes[item]
             # Add Chris
             self.diffcButton.setChecked(shape.difficult)
+            self.lineFeedButton.setChecked(shape.line_feed)
 
     def labelItemChanged(self, item):
         shape = self.itemsToShapes[item]
@@ -821,6 +862,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Add Chris
         self.diffcButton.setChecked(False)
+        self.lineFeedButton.setChecked(False)
         if text is not None:
             self.prevLabelText = text
             self.addLabel(self.canvas.setLastLabel(text))
